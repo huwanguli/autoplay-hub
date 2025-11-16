@@ -58,6 +58,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     http_method_names = ['get', 'head', 'options']  # ★ 我们暂时移除 'post' 和 'run'，让任务只能由运行脚本来创建
 
+    pagination_class = None
 
 @api_view(['GET'])
 def list_devices(request):

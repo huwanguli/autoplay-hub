@@ -36,4 +36,23 @@ export default {
   triggerManualScreenshot(taskId) {
     return apiClient.post(`/tasks/${taskId}/screenshot/`)
   },
+
+  createScript(scriptData) {
+    // scriptData 是一个包含 name, description, content 的对象
+    return apiClient.post('/scripts/', scriptData)
+  },
+
+  // 更新一个已存在的脚本
+  updateScript(scriptId, scriptData) {
+    return apiClient.put(`/scripts/${scriptId}/`, scriptData)
+  },
+
+  // 删除一个脚本
+  deleteScript(scriptId) {
+    return apiClient.delete(`/scripts/${scriptId}/`)
+  },
+
+  getTasks() {
+    return apiClient.get('/tasks/')
+  },
 }

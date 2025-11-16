@@ -8,7 +8,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 app = Celery('backend')
 
 # Celery将使用'CELERY_'前缀的变量作为配置
-# 我们在settings.py中定义这些配置
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # 自动从所有已注册的Django app中加载tasks.py文件

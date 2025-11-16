@@ -61,6 +61,7 @@ def _execute_action_node(node: dict, variables: dict, logger: TaskLogger):
 
     # 解析参数中的变量
     resolved_params = {k: _resolve_value(v, variables) for k, v in params.items()}
+    logger.log(f"执行动作: {action}，参数: {resolved_params}")
 
     def perform_action():
         """封装的原子操作，用于重试"""
@@ -70,9 +71,12 @@ def _execute_action_node(node: dict, variables: dict, logger: TaskLogger):
             target_path = os.path.join(settings.BASE_DIR, 'script_assets', resolved_params['target'])
             touch(Template(target_path))
         elif action == "swipe":
-            swipe(tuple(resolved_params['start']), tuple(resolved_params['end']))
+            start_pos = tuple(resolved_params['start'])
+            end_pos = tuple(resolved_params['end'])
+            swipe(start_pos, end_pos)
         elif action == "text":
-            text(resolved_params.get("text", ""))
+            text_to_input = resolved_params.get("content", "")
+            text(text_to_input)
         elif action == "snapshot":
             filename = resolved_params.get("filename", f"snapshot_{int(time.time())}.png")
             snapshot_path = os.path.join('task_logs', str(logger.task_id), filename)
@@ -98,6 +102,7 @@ def _execute_action_node(node: dict, variables: dict, logger: TaskLogger):
         else:
             perform_action()  # 无重试配置，直接执行
     except Exception as e:
+        logger.log(f"动作失败，准备处理失败策略 '{on_failure}'。错误: {e}")
         if on_failure == "ignore":
             logger.log(f"动作失败，已忽略: {e}")
         else:  # "abort" 或重试后最终失败
