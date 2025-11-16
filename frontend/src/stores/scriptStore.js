@@ -1,54 +1,53 @@
 import { defineStore } from 'pinia'
+import { useRouter } from 'vue-router' // 引入路由，方便运行后跳转
 import api from '@/services/api'
-import router from '@/router'
 
-export const useScriptStore = defineStore('script', {
+export const useScriptStore = defineStore('scripts', {
   state: () => ({
-    scripts: [],
-    isLoading: false,
-    error: null,
+    scripts: [], // 存储脚本列表
+    isLoading: false, // 加载状态
+    error: null, // 错误信息
   }),
 
-  // 2. 定义Actions：包含可以被调用的方法，用于改变State
   actions: {
-    /**
-     * 从API获取脚本列表并更新state
-     */
+    // 从后端获取所有脚本
     async fetchScripts() {
-      this.isLoading = true // 开始加载，设置isLoading为true
-      this.error = null // 清除之前的错误
-
+      this.isLoading = true
+      this.error = null
       try {
-        // 调用API服务中的getScripts方法
         const response = await api.getScripts()
-        // 成功后，用返回的数据更新scripts数组
         this.scripts = response.data
       } catch (err) {
-        // 如果发生错误
-        console.error('获取脚本列表失败:', err)
-        this.error = '无法加载脚本列表。请检查后端服务是否正在运行以及CORS配置是否正确。'
+        this.error = '无法加载脚本列表。'
+        console.error(err)
       } finally {
-        // 无论成功还是失败，最后都结束加载状态
         this.isLoading = false
       }
     },
 
-    async runScript(scriptId) {
-      this.isLoading = true
-      this.error = null
-      try {
-        const response = await api.runScript(scriptId)
-        const new_task = response.data
-        console.log('新任务已创建:', new_task)
+    // ★ 运行一个脚本（这是核心逻辑！）
+    async runScript(scriptId, deviceUri) {
+      // 检查是否传入了deviceUri，如果没有则报错，增加程序的健壮性
+      if (!deviceUri) {
+        alert('错误：必须先选择一个设备！')
+        return // 中止运行
+      }
 
-        // **成功后，跳转到新的任务详情页**
-        // 我们稍后会创建这个页面
-        router.push({ name: 'task-detail', params: { id: new_task.id } })
+      try {
+        // 调用后端API，并把 scriptId 和 deviceUri 一起发过去
+        const response = await api.runScript(scriptId, deviceUri)
+        const newTask = response.data // 后端会返回新创建的任务信息
+
+        // ★ 运行成功后，自动跳转到该任务的详情页
+        // 这是Vue 3的路由用法，我们在组件中会更容易使用，这里先注释掉
+        // const router = useRouter(); // 在store中直接使用useRouter()不被推荐
+        // router.push({ name: 'task-detail', params: { id: newTask.id } });
+
+        // 我们返回新任务，让调用它的组件来负责跳转
+        return newTask
       } catch (err) {
-        console.error(`运行脚本 #${scriptId} 失败:`, err)
-        this.error = `无法运行脚本。`
-      } finally {
-        this.isLoading = false
+        alert(`运行脚本失败: ${err.response?.data?.error || err.message}`)
+        console.error(err)
       }
     },
   },

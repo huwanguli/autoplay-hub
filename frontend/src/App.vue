@@ -1,71 +1,35 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
   <header>
     <div class="wrapper">
-      <nav>
-        <RouterLink to="/">首页</RouterLink>
-        <RouterLink to="/scripts">脚本列表</RouterLink>
-        <RouterLink to="/about">关于</RouterLink>
-      </nav>
+      <h1>AutoPlay Hub</h1>
     </div>
   </header>
 
-  <!--
-    这是最关键的部分！
-    <RouterView /> 会根据当前浏览器URL，自动显示对应的页面组件。
-    当URL是 /scripts 时，这里就会显示 ScriptsView.vue 的内容。
-  -->
   <main>
     <RouterView />
   </main>
 </template>
 
 <style scoped>
+/* scoped 样式意味着这里的CSS只对当前组件(App.vue)生效，不会影响到其他地方 */
 header {
   line-height: 1.5;
-  max-height: 100vh;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #ddd;
-  margin-bottom: 2rem;
+  background-color: #f8f9fa;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #dee2e6;
 }
 
-.wrapper {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 1rem;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-nav a.router-link-exact-active {
-  color: hsla(160, 100%, 37%, 1);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
+h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #212529;
 }
 
 main {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  padding: 2rem;
 }
 </style>

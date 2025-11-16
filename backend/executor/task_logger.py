@@ -8,36 +8,49 @@ class TaskLogger:
     """
     一个专门用于处理任务日志记录、状态更新和WebSocket广播的类。
     """
-    def __init__(self, task_id: int):
-        self.task_id = task_id
-        self.task = Task.objects.get(id=task_id)
-        self.log_content = self.task.log or ""  # 从数据库加载现有日志
-        self.channel_layer = get_channel_layer()
+    def __init__(self, task_id):
+        try:
+            # 初始加载一次任务，主要为了获取ID
+            self.task = Task.objects.get(id=task_id)
+            self.task_id = task_id
+            self.channel_layer = get_channel_layer()
+        except Task.DoesNotExist:
+            raise ValueError(f"Task with ID {task_id} does not exist.")
 
-    def log(self, message: str, status: str = None):
-        """记录一条新日志，并选择性地更新状态，然后广播。"""
-        print(f"[Task #{self.task_id}] {message}") # 在Celery控制台打印
-        self.log_content += message + "\n"
-        self.task.log = self.log_content
+    def log(self, message, status=None):
+        try:
+            current_task = Task.objects.get(id=self.task_id)
 
-        if status:
-            self.task.status = status
+            log_message = f"{message}\n"
+            current_task.log = (current_task.log or '') + log_message
+
+            if status:
+                current_task.status = status
+
             if status in ['SUCCESS', 'FAILED']:
-                self.task.completed_at = timezone.now()
+                current_task.completed_at = timezone.now()
 
-        # 保存所有变更到数据库
-        self.task.save()
-        self._broadcast()
+            # 保存包含了所有最新信息（包括其他任务可能写入的截图路径）的对象
+            current_task.save()
 
-    def update_screenshot(self, screenshot_path: str):
-        """专门用于更新截图并广播的方法。"""
-        self.task.latest_screenshot = screenshot_path
-        self.task.save()
-        self.log(f"截图已更新: {screenshot_path}") # 同时也记录一条日志
+            # 使用最新的对象进行序列化和广播
+            self.broadcast(current_task)
 
-    def _broadcast(self):
-        """私有方法，用于通过WebSocket广播当前任务的完整状态。"""
-        serializer = TaskSerializer(self.task)
+        except Task.DoesNotExist:
+            pass
+
+    def update_screenshot(self, screenshot_path):
+        # 这个方法现在也可以从这个修复中受益
+        try:
+            current_task = Task.objects.get(id=self.task_id)
+            current_task.latest_screenshot = screenshot_path
+            current_task.save()
+            self.broadcast(current_task)
+        except Task.DoesNotExist:
+            pass
+
+    def broadcast(self, task_instance):
+        serializer = TaskSerializer(task_instance)
         async_to_sync(self.channel_layer.group_send)(
             'task_updates',
             {

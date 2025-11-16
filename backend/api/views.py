@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Script, Task
 from .serializers import ScriptSerializer, TaskSerializer
-from executor.tasks import execute_automation_task
+from executor.tasks import execute_automation_task, take_manual_screenshot_task
 import subprocess
 import re
 from rest_framework.decorators import api_view
@@ -38,7 +38,7 @@ class ScriptViewSet(viewsets.ModelViewSet):
             )
 
         # 创建一个新的Task实例
-        new_task = Task.objects.create(script=script, status='PENDING')
+        new_task = Task.objects.create(script=script, status='PENDING',device_uri=device_uri)
 
         # ★ 关键改动 2：将 new_task.id 和 device_uri 一起传递给 Celery
         execute_automation_task.delay(new_task.id, device_uri)
@@ -112,3 +112,20 @@ def list_devices(request):
         return Response({'error': f"发生未知错误: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+def manual_screenshot(request, pk):
+    """
+    触发一个手动截图任务。
+    pk 是任务的ID。
+    """
+    try:
+        task = Task.objects.get(pk=pk)
+        if task.status not in ['RUNNING', 'PENDING']:
+            return Response({'error': '任务已结束，无法截图'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 将截图任务放入Celery队列
+        take_manual_screenshot_task.delay(task.id)
+        return Response({'status': '截图指令已发送'})
+
+    except Task.DoesNotExist:
+        return Response({'error': '任务不存在'}, status=status.HTTP_404_NOT_FOUND)

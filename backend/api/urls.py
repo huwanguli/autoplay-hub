@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ScriptViewSet, TaskViewSet, list_devices
+from .views import ScriptViewSet, TaskViewSet, list_devices, manual_screenshot
 
 # 创建一个路由器，并注册我们的视图集
 router = DefaultRouter()
@@ -12,4 +12,5 @@ urlpatterns = [
     path('', include(router.urls)),
 
     path('devices/',list_devices,name='devices-list'),
+    path('tasks/<int:pk>/screenshot/', manual_screenshot, name='task-screenshot'),
 ]
