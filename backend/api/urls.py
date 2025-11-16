@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ScriptViewSet, TaskViewSet, list_devices, manual_screenshot
+from .views import ScriptViewSet, TaskViewSet, list_devices, manual_screenshot, cancel_task
 
 # 创建一个路由器，并注册我们的视图集
 router = DefaultRouter()
@@ -13,4 +13,6 @@ urlpatterns = [
 
     path('devices/',list_devices,name='devices-list'),
     path('tasks/<int:pk>/screenshot/', manual_screenshot, name='task-screenshot'),
+
+    path('tasks/<int:pk>/cancel/', cancel_task, name='task-cancel'),
 ]

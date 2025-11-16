@@ -55,4 +55,8 @@ export default {
   getTasks() {
     return apiClient.get('/tasks/')
   },
+
+  cancelTask(taskId) {
+    return apiClient.post(`/tasks/${taskId}/cancel/`)
+  },
 }

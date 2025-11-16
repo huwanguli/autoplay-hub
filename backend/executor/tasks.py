@@ -15,7 +15,6 @@ def execute_automation_task(task_id: int, device_uri: str):
     接收 task_id 和 device_uri，并协调执行流程。
     """
     logger = TaskLogger(task_id)
-
     try:
         task = logger.task
         task.started_at = timezone.now()

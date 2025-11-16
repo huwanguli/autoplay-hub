@@ -71,5 +71,21 @@ export const useTaskDetailStore = defineStore('taskDetail', {
     clearTask() {
       this.task = null
     },
+
+    async cancelTask() {
+      if (!this.task) return
+      try {
+        await api.cancelTask(this.task.id)
+        // 后端会通过WebSocket广播最终状态，前端无需额外操作
+        // 但可以给个即时反馈
+        if (this.task) {
+          this.task.status = 'CANCELED'
+        }
+        alert('取消指令已发送成功！')
+      } catch (err) {
+        alert(`取消失败: ${err.response?.data?.error || err.message}`)
+        console.error(err)
+      }
+    },
   },
 })

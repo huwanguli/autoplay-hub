@@ -47,6 +47,16 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <div class="actions-bar">
+        <button
+          v-if="task.status === 'RUNNING' || task.status === 'PENDING'"
+          @click="taskDetailStore.cancelTask"
+          class="btn-danger"
+        >
+          取消任务
+        </button>
+      </div>
+
       <div class="main-content">
         <!-- 左侧：实时日志 -->
         <div class="log-panel">
@@ -81,6 +91,17 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.actions-bar {
+  margin-bottom: 2rem;
+}
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
 .task-detail-container {
   max-width: 1200px;
   margin: auto;

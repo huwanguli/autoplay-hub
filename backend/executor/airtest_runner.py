@@ -4,42 +4,40 @@ from django.conf import settings
 from airtest.core.api import auto_setup, touch, swipe, sleep, snapshot, Template, text
 from airtest.core.error import TargetNotFoundError
 from .task_logger import TaskLogger
+from api.models import Script
 
 
 def execute_script_flow(script_content: dict, device_uri: str, logger: TaskLogger):
     """
     v2.0 脚本解释器的总入口。
     """
-    # 1. 初始化 Airtest 环境
-    log_dir = os.path.join(settings.MEDIA_ROOT, 'task_logs', str(logger.task_id))
-    os.makedirs(log_dir, exist_ok=True)
-    auto_setup(__file__, logdir=log_dir, devices=[device_uri])
+    # 仅在顶层任务开始时初始化Airtest环境
+    # 子脚本执行时将复用这个环境
+    auto_setup(logdir=False, devices=[device_uri])
     logger.log(f"Airtest已连接到设备: {device_uri}")
 
-    # 2. 获取变量和步骤
     variables = script_content.get("variables", {})
     steps = script_content.get("steps", [])
 
-    # 3. 循环执行所有顶层节点
     for node in steps:
         _process_node(node, variables, logger)
 
 
 def _process_node(node: dict, variables: dict, logger: TaskLogger):
     """
-    递归处理单个节点。这是解释器的核心。
+    递归处理单个节点。这是解释器的核心分派器。
     """
     node_type = node.get("type")
     description = node.get("description", "无描述")
     logger.log(f"--- [执行节点] {description} (类型: {node_type}) ---")
 
-    # 根据节点类型分派到不同的处理器
     if node_type == "action":
         _execute_action_node(node, variables, logger)
     elif node_type == "loop":
         _execute_loop_node(node, variables, logger)
     elif node_type == "condition":
         _execute_condition_node(node, variables, logger)
+    # ★ 关键：当节点类型为 sub_script 时，调用我们升级后的子脚本执行器
     elif node_type == "sub_script":
         _execute_sub_script_node(node, variables, logger)
     else:
@@ -47,19 +45,19 @@ def _process_node(node: dict, variables: dict, logger: TaskLogger):
 
 
 def _resolve_value(value, variables):
-    """解析参数中的变量引用，例如 '{{username}}'"""
+    """解析参数中的变量引用"""
     if isinstance(value, str) and value.startswith("{{") and value.endswith("}}"):
         var_name = value[2:-2].strip()
-        return variables.get(var_name, value)  # 如果变量未定义，返回原始字符串
+        return variables.get(var_name, value)
     return value
 
 
 def _execute_action_node(node: dict, variables: dict, logger: TaskLogger):
+    """执行单个“动作”节点"""
     action = node.get("action")
     params = node.get("params", {})
-    on_failure = node.get("on_failure", "abort")  # 默认为 abort
+    on_failure = node.get("on_failure", "abort")
 
-    # 解析参数中的变量
     resolved_params = {k: _resolve_value(v, variables) for k, v in params.items()}
     logger.log(f"执行动作: {action}，参数: {resolved_params}")
 
@@ -85,31 +83,32 @@ def _execute_action_node(node: dict, variables: dict, logger: TaskLogger):
         else:
             raise ValueError(f"未知的原子动作: {action}")
 
-    # 实现失败处理逻辑
+    # 失败处理逻辑
     try:
         if isinstance(on_failure, dict) and "retry" in on_failure:
             retry_config = on_failure["retry"]
             for i in range(retry_config.get("count", 1)):
                 try:
                     perform_action()
-                    return  # 成功则退出
+                    return
                 except TargetNotFoundError as e:
                     logger.log(f"动作失败 (尝试 {i + 1}/{retry_config['count']}): {e}")
                     if i + 1 < retry_config['count']:
                         time.sleep(retry_config.get("delay", 1))
                     else:
-                        raise e  # 最后一次尝试失败，重新抛出异常
+                        raise e
         else:
-            perform_action()  # 无重试配置，直接执行
+            perform_action()
     except Exception as e:
         logger.log(f"动作失败，准备处理失败策略 '{on_failure}'。错误: {e}")
         if on_failure == "ignore":
             logger.log(f"动作失败，已忽略: {e}")
-        else:  # "abort" 或重试后最终失败
-            raise e  # 将异常向上传递，由顶层任务捕获
+        else:
+            raise e
 
 
 def _execute_loop_node(node: dict, variables: dict, logger: TaskLogger):
+    """执行“循环”节点"""
     if node.get("loop_type") == "count":
         count = node.get("count", 0)
         for i in range(count):
@@ -119,6 +118,7 @@ def _execute_loop_node(node: dict, variables: dict, logger: TaskLogger):
 
 
 def _execute_condition_node(node: dict, variables: dict, logger: TaskLogger):
+    """执行“条件”节点"""
     condition_met = False
     if node.get("condition_type") == "if_image_exists":
         params = node.get("params", {})
@@ -137,17 +137,32 @@ def _execute_condition_node(node: dict, variables: dict, logger: TaskLogger):
 
 
 def _execute_sub_script_node(node: dict, variables: dict, logger: TaskLogger):
-    """在这里实现预定义的子脚本"""
-    name = node.get("name")
+    """
+    ★★★ 全新升级的子脚本执行器 ★★★
+    通过数据库ID动态调用并执行另一个脚本。
+    """
     params = node.get("params", {})
     resolved_params = {k: _resolve_value(v, variables) for k, v in params.items()}
 
-    if name == "standard_login":
-        # 这是一个硬编码的子脚本示例
-        logger.log("--- [执行子脚本: standard_login] ---")
-        # 假设登录需要点击用户名、输入、点击密码、输入、点击登录
-        # 你需要根据你的实际情况提供图片和坐标
-        # _execute_action_node(...)
-        pass  # 此处需要您根据实际情况填充
-    else:
-        logger.log(f"警告：未知的子脚本 '{name}'")
+    sub_script_id = resolved_params.get("id")
+    if not sub_script_id:
+        raise ValueError("sub_script 节点需要一个 'id' 参数。")
+
+    try:
+        # 从数据库中获取子脚本模型
+        sub_script_model = Script.objects.get(id=sub_script_id)
+        logger.log(f"--- [开始执行子脚本: '{sub_script_model.name}' (ID: {sub_script_id})] ---")
+
+        # 获取子脚本的内容
+        sub_script_content = sub_script_model.content
+        sub_script_steps = sub_script_content.get("steps", [])
+
+        # ★ 关键：递归处理子脚本中的每一个节点
+        for sub_node in sub_script_steps:
+            # 我们将父脚本的变量传递给子脚本，未来可以实现更复杂的变量作用域
+            _process_node(sub_node, variables, logger)
+
+        logger.log(f"--- [子脚本 '{sub_script_model.name}' 执行完毕] ---")
+
+    except Script.DoesNotExist:
+        raise ValueError(f"找不到ID为 {sub_script_id} 的子脚本。")

@@ -25,6 +25,7 @@ class Task(models.Model):
         ('SUCCESS', '成功'),
         ('FAILED', '失败'),
         ('PAUSED', '已暂停'),
+        ('CANCELED', '已取消'),
     ]
 
     script = models.ForeignKey(Script, on_delete=models.CASCADE, verbose_name="关联脚本")
@@ -37,7 +38,7 @@ class Task(models.Model):
     latest_screenshot = models.CharField(max_length=255, null=True, blank=True, verbose_name="最新截图")
     device_uri = models.CharField("设备URI", max_length=255, blank=True, null=True,
                                   help_text="执行此任务时使用的设备URI")
-
+    celery_task_id = models.CharField("Celery任务ID", max_length=255, blank=True, null=True, help_text="Celery后台任务的唯一ID")
     @property
     def latest_screenshot_url(self):
         if self.latest_screenshot:
