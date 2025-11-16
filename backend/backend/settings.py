@@ -29,7 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api',
+    'api.apps.ApiConfig',
+    'executor.apps.ExecutorConfig',
+    'drf_spectacular',
     'rest_framework',
     'django_celery_results',
 
@@ -156,3 +158,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# 配置API文档页面的标题、描述等信息
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'AutoPlay Hub API',
+    'DESCRIPTION': '一个用于自动化任务编排和执行的平台 API 文档',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,  # True 会在UI中显示一个下载schema.yaml的链接，False则隐藏
+    'SWAGGER_UI_SETTINGS': {
+        'docExpansion': 'list', # 'list' 会展开所有API，'none' 则全部折叠
+        'filter': True,         # 显示一个可以过滤API的搜索框
+    }
+}

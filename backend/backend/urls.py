@@ -15,14 +15,24 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include  # 确保 include 已导入
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # 将所有 /api/ 开头的请求，都转发到 api.urls 去处理
     path('api/', include('api.urls')),
+
+    # ★ 新增：自动API文档的路由
+    # 1. /api/schema/ -> 下载 schema.yaml 文件
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # 2. /api/schema/swagger-ui/ -> 交互式的 Swagger UI 界面
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # 3. /api/schema/redoc/ -> 更简洁的 ReDoc 界面
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 if settings.DEBUG:

@@ -1,1 +1,0 @@
-{"tag": "function", "depth": 1, "time": 1763122427.380674, "data": {"name": "connect_device", "call_args": {"uri": "Android:///", "device": "emulator-5554"}, "start_time": 1763122427.0951166, "ret": "<Android 'emulator-5554'>", "end_time": 1763122427.380674}}

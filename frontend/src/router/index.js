@@ -18,7 +18,7 @@ const router = createRouter({
     },
     {
       path: '/tasks/:id',
-      name: 'task-detail', // 这个名字很重要，我们马上会用到
+      name: 'task-detail',
       component: TaskDetailView,
     },
     {

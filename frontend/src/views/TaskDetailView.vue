@@ -1,52 +1,29 @@
 <script setup>
-import { onMounted, onUnmounted, nextTick, ref } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTaskStore } from '@/stores/taskStore'
 
-// 1. 获取 store 实例和任务ID
 const taskStore = useTaskStore()
 const route = useRoute()
 const taskId = Number(route.params.id)
 
-// 2. ★ 关键改动：创建一个 ref 来强制组件更新
-// 我们将通过改变这个 ref 的值来告诉Vue：“嘿，你需要重新渲染了！”
-const forceUpdateKey = ref(0)
-
-// 3. 在组件挂载时执行
 onMounted(() => {
-  // 清理旧数据并获取新数据
-  taskStore.currentTask = {}
   taskStore.fetchTask(taskId)
   taskStore.connectWebSocket()
+})
 
-  // 4. ★ 关键改动：订阅 Pinia store 的 action
-  // `$onAction` 会在 store 的任何一个 action 被调用后触发。
-  const unsubscribe = taskStore.$onAction(({ name, store, after }) => {
-    // 我们只关心 store 的数据是否被修改了
-    // `after` 会在 action 执行成功后被调用
-    after(() => {
-      // 无论哪个 action 修改了 store，我们都手动触发一次视图更新
-      console.log(`Action '${name}' finished, forcing component update.`)
-      forceUpdateKey.value++ // 改变key的值，强制Vue重新渲染
-    })
-  })
-
-  // 5. 在组件卸载时，取消订阅，防止内存泄漏
-  onUnmounted(() => {
-    taskStore.disconnectWebSocket()
-    unsubscribe() // 调用 `onAction` 返回的函数来取消订阅
-  })
+onUnmounted(() => {
+  taskStore.disconnectWebSocket()
 })
 </script>
 
 <template>
-  <!-- 6. ★ 关键改动：将 `forceUpdateKey` 作为组件根元素的 :key -->
-  <!-- 当 key 的值改变时，Vue会认为这是一个全新的组件，从而强制重新渲染它。 -->
-  <div class="task-detail-view" :key="forceUpdateKey">
+  <div class="task-detail-view">
     <div v-if="taskStore.isLoading">正在加载任务详情...</div>
     <div v-if="taskStore.error" class="error-message">{{ taskStore.error }}</div>
 
-    <div v-if="taskStore.currentTask && taskStore.currentTask.id" class="task-container">
+    <!-- ★ 使用 v-if="taskStore.currentTask" 来确保对象存在才渲染 -->
+    <div v-if="taskStore.currentTask" class="task-container">
       <div class="task-header">
         <h1>任务详情 (ID: {{ taskStore.currentTask.id }})</h1>
         <div
@@ -68,6 +45,7 @@ onMounted(() => {
           <h2>实时截图</h2>
           <div class="screenshot-box">
             <p v-if="!taskStore.currentTask.latest_screenshot_url">暂无截图</p>
+            <!-- ★ 直接使用相对路径，Vite代理会自动处理 -->
             <img
               v-else
               :src="taskStore.currentTask.latest_screenshot_url"
@@ -78,11 +56,11 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <div v-else-if="!taskStore.isLoading">没有找到任务数据。</div>
   </div>
 </template>
 
 <style scoped>
-/* 样式保持完全不变 */
 .task-detail-view {
   max-width: 1200px;
   margin: auto;
@@ -106,7 +84,7 @@ onMounted(() => {
 .status.success {
   background-color: #4caf50;
 }
-.status.failure {
+.status.failed {
   background-color: #f44336;
 }
 .status.pending {

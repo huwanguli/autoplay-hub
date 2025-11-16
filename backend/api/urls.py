@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ScriptViewSet, TaskViewSet
+from .views import ScriptViewSet, TaskViewSet, list_devices
 
 # 创建一个路由器，并注册我们的视图集
 router = DefaultRouter()
@@ -10,4 +10,6 @@ router.register(r'tasks', TaskViewSet)
 # API的URL由路由器自动确定
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('devices/',list_devices,name='devices-list'),
 ]
