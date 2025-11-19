@@ -34,7 +34,7 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     started_at = models.DateTimeField(null=True, blank=True, verbose_name="开始时间")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="完成时间")
-    # 用于存储截图的相对路径或ID，方便后续查询
+
     latest_screenshot = models.CharField(max_length=255, null=True, blank=True, verbose_name="最新截图")
     device_uri = models.CharField("设备URI", max_length=255, blank=True, null=True,
                                   help_text="执行此任务时使用的设备URI")

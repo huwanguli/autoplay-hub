@@ -9,9 +9,6 @@ import re
 from rest_framework.decorators import api_view
 from django.utils import timezone
 from executor.task_logger import TaskLogger
-
-# ★★★ 1. 关键修正：直接从项目的celery.py文件中导入app实例 ★★★
-# 我们不再需要 apps 和 Control 的导入
 from backend.celery import app as celery_app
 
 
@@ -23,7 +20,7 @@ class ScriptViewSet(viewsets.ModelViewSet):
     serializer_class = ScriptSerializer
 
     @action(detail=True, methods=['post'])
-    def run(self, request, pk=None):
+    def run(self, request,pk=None):
         """
         一个自定义的API端点，用于直接运行一个脚本。
         """

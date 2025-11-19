@@ -1,13 +1,13 @@
 from celery import shared_task
 from django.utils import timezone
-from api.models import Task
+from api.models import Task,Script
 from .task_logger import TaskLogger
 from .airtest_runner import execute_script_flow
 import os
 import time
 from django.conf import settings
 from airtest.core.api import auto_setup,snapshot
-
+from celery.exceptions import SoftTimeLimitExceeded
 
 @shared_task
 def execute_automation_task(task_id: int, device_uri: str):
@@ -15,15 +15,31 @@ def execute_automation_task(task_id: int, device_uri: str):
     接收 task_id 和 device_uri，并协调执行流程。
     """
     logger = TaskLogger(task_id)
+
+    def check_for_cancellation():
+        """从数据库重新获取任务状态，检查是否已被取消。"""
+        # 使用 refresh_from_db 获取最新的状态
+        logger.task.refresh_from_db()
+        if logger.task.status == 'CANCELED':
+            logger.log("检测到任务已被取消，正在终止执行...")
+            # 抛出一个异常来中断任务流程
+            raise InterruptedError("Task was canceled by user.")
+
     try:
         task = logger.task
         task.started_at = timezone.now()
         logger.log(f"--- [任务开始] 脚本: {task.script.name} ---", status='RUNNING')
 
-        # ★ 关键改动：调用新的执行器，并传入 device_uri
-        execute_script_flow(task.script.content, device_uri, logger)
+        check_for_cancellation()
+        execute_script_flow(task.script.content, device_uri, logger,check_for_cancellation)
 
         logger.log(f"--- [任务成功] ---", status='SUCCESS')
+
+    except InterruptedError as e:
+        # 这是我们自己抛出的异常，表示任务被正常取消了
+        print(e)
+        # 状态已经在 cancel_task 视图中被设置，这里无需再次操作
+        pass
 
     except Exception as e:
         # 导入我们可能遇到的特定错误

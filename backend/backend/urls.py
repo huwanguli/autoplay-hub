@@ -26,8 +26,7 @@ urlpatterns = [
     # 将所有 /api/ 开头的请求，都转发到 api.urls 去处理
     path('api/', include('api.urls')),
 
-    # 新增：自动API文档的路由
-
+    # 自动API文档的路由
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # 2. /api/schema/swagger-ui/ -> 交互式的 Swagger UI 界面
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

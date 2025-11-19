@@ -168,9 +168,9 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'AutoPlay Hub API',
     'DESCRIPTION': '一个用于自动化任务编排和执行的平台 API 文档',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,  # True 会在UI中显示一个下载schema.yaml的链接，False则隐藏
+    'SERVE_INCLUDE_SCHEMA': False,
     'SWAGGER_UI_SETTINGS': {
-        'docExpansion': 'list', # 'list' 会展开所有API，'none' 则全部折叠
-        'filter': True,         # 显示一个可以过滤API的搜索框
+        'docExpansion': 'list',
+        'filter': True,
     }
 }
