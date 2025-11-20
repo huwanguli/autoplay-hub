@@ -18,7 +18,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
@@ -26,6 +25,8 @@ urlpatterns = [
     # 将所有 /api/ 开头的请求，都转发到 api.urls 去处理
     path('api/', include('api.urls')),
 
+    path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
     # 自动API文档的路由
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # 2. /api/schema/swagger-ui/ -> 交互式的 Swagger UI 界面

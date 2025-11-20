@@ -33,7 +33,13 @@ INSTALLED_APPS = [
     'executor.apps.ExecutorConfig',
     'drf_spectacular',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_celery_results',
+    'dj_rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
 
 ]
 
@@ -46,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -76,9 +83,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'autoplay_hub_db',  # <-- 先在MySQL中手动创建这个数据库
-        'USER': 'root',             # <-- 你的MySQL用户名
-        'PASSWORD': 'www.184WYOP.com',  # <-- 替换成你的密码
+        'NAME': 'autoplay_hub_db',
+        'USER': 'root',
+        'PASSWORD': 'www.184WYOP.com',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     }
@@ -161,6 +168,34 @@ CORS_ALLOWED_ORIGINS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# --- 1. Django Allauth (dj-rest-auth的依赖) ---
+SITE_ID = 1
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+ACCOUNT_EMAIL_REQUIRED = False
+
+# --- 2. Django REST Framework ---
+# 新版本建议将所有DRF相关配置统一放入REST_FRAMEWORK字典
+REST_FRAMEWORK = {
+    # 认证
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # 权限
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 默认允许任何人访问，我们将在视图中手动保护需要登录的接口
+        'rest_framework.permissions.AllowAny',
+    ),
+    # API文档
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# --- 3. dj-rest-auth & simplejwt ---
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_HTTPONLY': False, # 允许前端JS读取Token
 }
 
 # 配置API文档页面的标题、描述等信息

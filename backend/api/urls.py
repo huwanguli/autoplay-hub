@@ -4,8 +4,8 @@ from .views import ScriptViewSet, TaskViewSet, list_devices, manual_screenshot, 
 
 # 创建一个路由器，并注册我们的视图集
 router = DefaultRouter()
-router.register(r'scripts', ScriptViewSet)
-router.register(r'tasks', TaskViewSet)
+router.register(r'scripts', ScriptViewSet,basename='script')
+router.register(r'tasks', TaskViewSet, basename='task')
 
 # API的URL由路由器自动确定
 urlpatterns = [

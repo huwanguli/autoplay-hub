@@ -1,6 +1,7 @@
 from django.db import models
 import os
 from django.conf import settings
+from django.contrib.auth.models import User
 
 class Script(models.Model):
     """
@@ -11,7 +12,8 @@ class Script(models.Model):
     content = models.JSONField(verbose_name="脚本内容")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
-
+    owner = models.ForeignKey(User, related_name='scripts', on_delete=models.CASCADE, null=True, blank=True,
+                              verbose_name="所有者")
     def __str__(self):
         return self.name
 
@@ -39,6 +41,9 @@ class Task(models.Model):
     device_uri = models.CharField("设备URI", max_length=255, blank=True, null=True,
                                   help_text="执行此任务时使用的设备URI")
     celery_task_id = models.CharField("Celery任务ID", max_length=255, blank=True, null=True, help_text="Celery后台任务的唯一ID")
+
+    owner = models.ForeignKey(User, related_name='tasks', on_delete=models.CASCADE, null=True, blank=True,
+                              verbose_name="所有者")
     @property
     def latest_screenshot_url(self):
         if self.latest_screenshot:
